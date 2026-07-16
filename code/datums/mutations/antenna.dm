@@ -6,6 +6,8 @@
 	text_lose_indication = span_notice("Your antenna shrinks back down.")
 	instability = POSITIVE_INSTABILITY_MINOR
 	difficulty = 8
+	mutation_icon_state = "antenna"
+	layer_used = FRONT_MUTATIONS_LAYER
 	var/datum/weakref/radio_weakref
 
 /obj/item/implant/radio/antenna
@@ -25,6 +27,8 @@
 	var/obj/item/implant/radio/antenna/linked_radio = new(owner)
 	linked_radio.implant(owner, null, TRUE, TRUE)
 	radio_weakref = WEAKREF(linked_radio)
+	// Troutstation edit
+	ADD_TRAIT(owner, TRAIT_FLOCKISH_EAVESDROPPER, REF(src))
 
 /datum/mutation/antenna/on_losing(mob/living/carbon/human/owner)
 	if(..())
@@ -32,14 +36,8 @@
 	var/obj/item/implant/radio/antenna/linked_radio = radio_weakref.resolve()
 	if(linked_radio)
 		QDEL_NULL(linked_radio)
-
-/datum/mutation/antenna/New(datum/mutation/copymut)
-	..()
-	if(!(type in visual_indicators))
-		visual_indicators[type] = list(mutable_appearance('icons/mob/effects/genetics.dmi', "antenna", -FRONT_MUTATIONS_LAYER+1))//-MUTATIONS_LAYER+1
-
-/datum/mutation/antenna/get_visual_indicator()
-	return visual_indicators[type][1]
+	// Troutstation edit
+	REMOVE_TRAIT(owner, TRAIT_FLOCKISH_EAVESDROPPER, REF(src))
 
 /datum/mutation/mindreader
 	name = "Mind Reader"
@@ -51,6 +49,8 @@
 	instability = POSITIVE_INSTABILITY_MINOR
 	difficulty = 8
 	locked = TRUE
+	mutation_icon_state = "antenna"
+	layer_used = FRONT_MUTATIONS_LAYER
 
 /datum/action/cooldown/spell/pointed/mindread
 	name = "Mindread"
@@ -174,11 +174,3 @@
 	log_info += "Current thought: \"[read_text]\""
 
 	log_combat(examiner, examined, "mind read (triggered on examine)", null, "info: [english_list(log_info, and_text = ", ")]")
-
-/datum/mutation/mindreader/New(datum/mutation/copymut)
-	..()
-	if(!(type in visual_indicators))
-		visual_indicators[type] = list(mutable_appearance('icons/mob/effects/genetics.dmi', "antenna", -FRONT_MUTATIONS_LAYER+1))
-
-/datum/mutation/mindreader/get_visual_indicator()
-	return visual_indicators[type][1]

@@ -3,6 +3,7 @@
 /datum/map_template/shuttle/emergency
 	port_id = "emergency"
 	name = "Base Shuttle Template (Emergency)"
+	prefix = "_maps/shuttles/emergency/"
 	///assoc list of shuttle events to add to this shuttle on spawn (typepath = weight)
 	var/list/events
 	///pick all events instead of random
@@ -540,5 +541,15 @@
 	admin_notes = "A bit tight."
 	credit_cost = CARGO_CRATE_VALUE * 10
 	occupancy_limit = "45"
+
+/datum/map_template/shuttle/emergency/rotary
+	suffix = "rotary"
+	name = "Rotary Shuttle"
+	description = "Somehow, the NGO Rotary International still exists. \
+	We don't really know what they stand for or do these days, but they designed this escape shuttle solely with their own name in mind. \
+	It consists of a large donut-like ring, with the command area located directly in the center."
+	admin_notes = "ring around a rosie a pocket full of posies a tishoo a tishoo we all fall down"
+	credit_cost = CARGO_CRATE_VALUE * 16
+	occupancy_limit = "60"
 
 //troutstation edit end

@@ -36,10 +36,10 @@
 	test_ignored = TRUE
 	crate_name = "food crate"
 
-/datum/supply_pack/organic/randomized/fill(obj/structure/closet/crate/C)
+/datum/supply_pack/organic/randomized/fill(obj/container)
 	for(var/i in 1 to 15)
 		var/item = pick(contains)
-		new item(C)
+		new item(container)
 
 /datum/supply_pack/organic/randomized/chef
 	name = "Excellent Meat Crate"
@@ -395,7 +395,7 @@
 	Contains a full barrel of Nanotrasen brewed, low-grade alcoholic beverage, \
 	perfect for getting loose after a hard day of not dying."
 	cost = CARGO_CRATE_VALUE * 6.25
-	contains = list(/obj/structure/reagent_dispensers/beerkeg)
+	contains = list(/obj/structure/reagent_dispensers/keg/beer)
 	crate_name = "beer keg crate"
 	crate_type = /obj/structure/closet/crate/wooden
 
@@ -405,7 +405,7 @@
 	A single bite will transport you back to the taste of yesterday's prison rations. \
 	Contains a serving dish filled with Nutraslop."
 	cost = CARGO_CRATE_VALUE * 4
-	contains = list(/obj/structure/reagent_dispensers/servingdish)
+	contains = list(/obj/structure/reagent_dispensers/servingdish/unanchored)
 	crate_name = "nutraslop serving dish crate"
 
 

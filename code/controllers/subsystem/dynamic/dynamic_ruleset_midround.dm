@@ -230,11 +230,8 @@
 	if(isnull(body))
 		return
 	candidate.transfer_to(body, force_key_move = TRUE) // yoinks the candidate's client
-	if(ishuman(body))
-		var/mob/living/carbon/human/human_body = body
-		body.client?.prefs.safe_transfer_prefs_to(body)
-		human_body.dna.remove_all_mutations()
-		human_body.dna.update_dna_identity()
+	if(ishuman(body) && apply_prefs_to_body(body))
+		on_prefs_applied(body)
 
 /**
  * Handles making the body for the candidate
@@ -261,6 +258,24 @@
 		alert_pic = signup_atom_appearance,
 		role_name_text = readable_poll_role,
 	)
+
+/**
+ * Handles prepping the body with the candidate's prefs
+ *
+ * Applies prefs to a given body. Usually that's what you want, but sometimes you don't, in which case you can override this proc.
+ * Returns TRUE if prefs were applied
+ */
+/datum/dynamic_ruleset/midround/from_ghosts/proc/apply_prefs_to_body(mob/living/carbon/human/body)
+	body.client?.prefs.safe_transfer_prefs_to(body)
+	body.dna.remove_all_mutations()
+	body.dna.update_dna_identity()
+	return TRUE
+
+/**
+ * Handles anything extra you want to happen after applying prefs
+ */
+/datum/dynamic_ruleset/midround/from_ghosts/proc/on_prefs_applied(mob/living/carbon/human/body)
+	return
 
 /datum/dynamic_ruleset/midround/from_ghosts/wizard
 	name = "Wizard"
@@ -467,6 +482,7 @@
 	midround_type = LIGHT_MIDROUND
 	false_alarm_able = TRUE
 	pref_flag = ROLE_BLOOD_WORM_INFESTATION
+	jobban_flag = ROLE_BLOOD_WORM
 	candidate_role = "Blood Worm"
 	ruleset_flags = RULESET_INVADER
 	weight = 2 // For reference, Nightmare has a weight of 5.
@@ -510,6 +526,9 @@
 	min_pop = 15
 	max_antag_cap = 1
 	signup_atom_appearance = /obj/item/light_eater
+
+/datum/dynamic_ruleset/midround/from_ghosts/nightmare/apply_prefs_to_body(mob/living/carbon/human/body)
+	return FALSE
 
 /datum/dynamic_ruleset/midround/from_ghosts/nightmare/can_be_selected()
 	return ..() && !isnull(find_maintenance_spawn(atmos_sensitive = TRUE, require_darkness = TRUE))
@@ -714,23 +733,50 @@
 	preview_antag_datum = /datum/antagonist/paradox_clone
 	midround_type = LIGHT_MIDROUND
 	pref_flag = ROLE_PARADOX_CLONE
-	ruleset_flags = RULESET_INVADER
+	ruleset_flags = RULESET_INVADER|RULESET_ADMIN_CONFIGURABLE
 	weight = 5
 	min_pop = 10
 	max_antag_cap = 1
 	signup_atom_appearance = /obj/effect/bluespace_stream
 	/// Chance of getting another clone for the price of free
 	var/bonus_clone_chance = 20
+	/// Weakref to the crewmember we picked to clone, chosen before the ghost poll so it can name them
+	var/datum/weakref/clone_target_ref
 
 /datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/New(list/dynamic_config)
 	. = ..()
 	max_antag_cap += prob(bonus_clone_chance)
 
 /datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/can_be_selected()
+	if(clone_target_ref && isnull(clone_target_ref.resolve())) // our chosen original was deleted while we were polling, bail
+		return FALSE
 	return ..() && !isnull(find_clone()) && !isnull(find_maintenance_spawn(atmos_sensitive = TRUE, require_darkness = FALSE))
 
+#define RANDOM_CLONE_TARGET "Random"
+
+/datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/configure_ruleset(mob/admin)
+	var/list/admin_pool = list("[RULESET_CONFIG_CANCEL]" = TRUE, "[RANDOM_CLONE_TARGET]" = TRUE)
+	for(var/mob/living/carbon/human/target as anything in find_clone_candidates())
+		admin_pool["[target.real_name], the [target.mind.assigned_role.title]"] = target
+	var/picked = tgui_input_list(admin, "Select a crewmember to clone", "Clone Target", admin_pool)
+	if(!picked || picked == RULESET_CONFIG_CANCEL)
+		return RULESET_CONFIG_CANCEL
+	if(picked != RANDOM_CLONE_TARGET)
+		clone_target_ref = WEAKREF(admin_pool[picked])
+	return null
+
+#undef RANDOM_CLONE_TARGET
+
+/datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/collect_candidates()
+	var/mob/living/carbon/human/original = clone_target_ref?.resolve() || find_clone()
+	if(isnull(original))
+		return list()
+	clone_target_ref = WEAKREF(original)
+	candidate_role = "clone of [original.real_name] ([original.mind.assigned_role.title])"
+	return ..()
+
 /datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/create_execute_args()
-	return list(find_clone())
+	return list(clone_target_ref.resolve())
 
 /datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/create_ruleset_body()
 	return // handled by assign_role() entirely
@@ -746,6 +792,13 @@
 	bad_version.put_in_hands(new /obj/item/storage/toolbox/mechanical()) //so they dont get stuck in maints
 
 /datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/proc/find_clone()
+	var/list/possible_targets = find_clone_candidates()
+	if(length(possible_targets))
+		return pick(possible_targets)
+	return null
+
+/// Returns every crewmember currently valid to be cloned
+/datum/dynamic_ruleset/midround/from_ghosts/paradox_clone/proc/find_clone_candidates()
 	var/list/possible_targets = list()
 
 	for(var/mob/living/carbon/human/player in GLOB.player_list)
@@ -755,9 +808,7 @@
 			continue
 		possible_targets += player
 
-	if(length(possible_targets))
-		return pick(possible_targets)
-	return null
+	return possible_targets
 
 /datum/dynamic_ruleset/midround/from_ghosts/voidwalker
 	name = "Voidwalker"
@@ -1031,7 +1082,7 @@
 	candidate_role = "Slaughter Demon"
 	// preview_antag_datum = /datum/antagonist/slaughter // Doesn't actually have its own pref
 	midround_type = HEAVY_MIDROUND
-	jobban_flag = ROLE_ALIEN
+	jobban_flag = ROLE_SENTIENCE
 	ruleset_flags = RULESET_INVADER
 	weight = 0
 	min_pop = 20
@@ -1048,6 +1099,33 @@
 
 /datum/dynamic_ruleset/midround/from_ghosts/slaughter_demon/assign_role(datum/mind/candidate)
 	return // handled by new() entirely
+
+// Troutstation edit start (it does not feel worth splitting this into a modular file, subsystem stuff should all go in one place)
+/datum/dynamic_ruleset/midround/from_ghosts/flock_agent
+	name = "Flock Agent"
+	config_tag = "Flock Agent"
+	preview_antag_datum = /datum/antagonist/flock_agent
+
+	midround_type = LIGHT_MIDROUND
+	pref_flag = ROLE_FLOCK_AGENT
+	ruleset_flags = RULESET_INVADER
+
+	weight = 5 // they're functional enough
+	min_pop = 0
+	max_antag_cap = 2
+	ruleset_lazy_templates = list(LAZY_TEMPLATE_KEY_FLOCK_OUTPOST)
+	signup_atom_appearance = /mob/living/basic/flock/agent
+
+/datum/dynamic_ruleset/midround/from_ghosts/morph/can_be_selected()
+	return ..() && !isnull(find_maintenance_spawn(atmos_sensitive = TRUE, require_darkness = FALSE))
+
+/datum/dynamic_ruleset/midround/from_ghosts/flock_agent/create_ruleset_body()
+	return new /mob/living/basic/flock/agent
+
+/datum/dynamic_ruleset/midround/from_ghosts/flock_agent/assign_role(datum/mind/candidate)
+	candidate.add_antag_datum(/datum/antagonist/flock_agent)
+	// candidate.current.forceMove(find_maintenance_spawn(atmos_sensitive = TRUE, require_darkness = FALSE))
+// Troutstation edit end
 
 /datum/dynamic_ruleset/midround/from_living
 	min_antag_cap = 1
@@ -1122,7 +1200,7 @@
 	name = "Mass Traitors"
 	config_tag = "Mass Traitors"
 	midround_type = HEAVY_MIDROUND
-	min_pop = 15
+	min_pop = 90 // troutstation edit, fuck off, fuck right off
 	min_antag_cap = 2
 	max_antag_cap = 4
 	repeatable_weight_decrease = 8

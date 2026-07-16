@@ -303,7 +303,7 @@
 	message = "laughs."
 	message_mime = "laughs silently!"
 	emote_type = EMOTE_VISIBLE | EMOTE_AUDIBLE
-	specific_emote_audio_cooldown = 8 SECONDS
+	manual_specific_emote_audio_cooldown = 8 SECONDS
 	vary = TRUE
 
 /datum/emote/living/laugh/can_run_emote(mob/living/user, status_check = TRUE , intentional, params)
@@ -419,7 +419,9 @@
 	emote_type = EMOTE_VISIBLE | EMOTE_AUDIBLE
 	mob_type_blacklist_typecache = list(/mob/living/brain)
 	sound_wall_ignore = TRUE
-	specific_emote_audio_cooldown = 10 SECONDS
+	use_sound_tokens = TRUE
+	manual_specific_emote_audio_cooldown = 10 SECONDS
+	forced_specific_emote_audio_cooldown = 4 SECONDS
 	vary = TRUE
 
 /datum/emote/living/scream/run_emote(mob/user, params, type_override, intentional = FALSE)
@@ -429,10 +431,18 @@
 
 /datum/emote/living/scream/select_message_type(mob/user, message, intentional)
 	. = ..()
+	if(isflock(user))
+		message = "caws!"
+		return message // Troutstation edit, there's no way otherwise to get the scream
 	if(!intentional && isanimal_or_basicmob(user))
 		return "makes a loud and pained whimper."
 
 /datum/emote/living/scream/get_sound(mob/living/user)
+	// Troutstation edit, aggghhh, why is this done like this
+	if(isflock(user))
+		var/mob/living/basic/flock/flockie = user
+		return flockie.get_scream_sound()
+	// Troutstation edit end
 	if(!ishuman(user))
 		return
 	var/mob/living/carbon/human/humie = user
@@ -656,8 +666,7 @@
 	if(TIMER_COOLDOWN_FINISHED(user, COOLDOWN_YAWN_PROPAGATION))
 		TIMER_COOLDOWN_START(user, COOLDOWN_YAWN_PROPAGATION, cooldown * 3)
 
-	var/mob/living/carbon/carbon_user = user
-	if(carbon_user.obscured_slots & HIDEFACE)
+	if(astype(user, /mob/living/carbon)?.obscured_slots & HIDEFACE)
 		return // if your face is obscured, skip propagation
 
 	var/propagation_distance = user.client ? 5 : 2 // mindless mobs are less able to spread yawns

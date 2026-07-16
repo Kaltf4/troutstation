@@ -32,7 +32,6 @@
 	addiction_types = list(/datum/addiction/medicine = 400)
 	ph = 11
 	affected_biotype = MOB_ORGANIC | MOB_MINERAL | MOB_PLANT // no healing ghosts
-	affected_respiration_type = ALL
 
 //Random healing of the 4 main groups
 /datum/reagent/impurity/healing/medicine_failure/on_mob_life(mob/living/carbon/affected_mob, seconds_per_tick, metabolization_ratio)
@@ -47,7 +46,7 @@
 		if("tox")
 			need_mob_update = affected_mob.adjust_tox_loss(-0.2 * metabolization_ratio * seconds_per_tick, updating_health = FALSE, required_biotype = affected_biotype)
 		if("oxy")
-			need_mob_update = affected_mob.adjust_oxy_loss(-0.2 * metabolization_ratio * seconds_per_tick, updating_health = FALSE, required_biotype = affected_biotype, required_respiration_type = affected_respiration_type)
+			need_mob_update = affected_mob.adjust_oxy_loss(-0.2 * metabolization_ratio * seconds_per_tick, updating_health = FALSE, required_biotype = affected_biotype)
 	if(need_mob_update)
 		return UPDATE_MOB_HEALTH
 
@@ -86,8 +85,8 @@ Basically, we fill the time between now and 2s from now with hands based off the
 /datum/reagent/inverse/helgrasp/on_mob_life(mob/living/carbon/affected_mob, seconds_per_tick, metabolization_ratio)
 	. = ..()
 	spawn_hands(affected_mob)
-	lag_remainder += seconds_per_tick - FLOOR(seconds_per_tick, 1)
-	seconds_per_tick = FLOOR(seconds_per_tick, 1)
+	lag_remainder += seconds_per_tick - floor(seconds_per_tick)
+	seconds_per_tick = floor(seconds_per_tick)
 	if(lag_remainder >= 1)
 		seconds_per_tick += 1
 		lag_remainder -= 1
@@ -986,6 +985,8 @@ Basically, we fill the time between now and 2s from now with hands based off the
 	if(is_simian(affected_mob))
 		affected_mob.gain_trauma(/datum/brain_trauma/special/primal_instincts, TRAUMA_RESILIENCE_ABSOLUTE)
 		affected_mob.add_traits(list(TRAIT_STUNIMMUNE, TRAIT_SLEEPIMMUNE, TRAIT_ANALGESIA, TRAIT_STIMULATED), type)
+		if(jungle_arts)
+			return
 		jungle_arts = new(src)
 		jungle_arts.locked_to_use = TRUE
 		jungle_arts.teach(affected_mob)
@@ -993,10 +994,11 @@ Basically, we fill the time between now and 2s from now with hands based off the
 /datum/reagent/inverse/bath_salts/on_mob_end_metabolize(mob/living/carbon/affected_mob)
 	. = ..()
 	QDEL_NULL(jungle_arts)
+	affected_mob.remove_traits(list(TRAIT_STUNIMMUNE, TRAIT_SLEEPIMMUNE, TRAIT_ANALGESIA, TRAIT_STIMULATED), type)
+	affected_mob.Sleeping(30 SECONDS)
 	if(is_simian(affected_mob))
 		affected_mob.cure_trauma_type(/datum/brain_trauma/special/primal_instincts, resilience = TRAUMA_RESILIENCE_ABSOLUTE)
-		affected_mob.remove_traits(list(TRAIT_STUNIMMUNE, TRAIT_SLEEPIMMUNE, TRAIT_ANALGESIA, TRAIT_STIMULATED), type)
-		affected_mob.Sleeping(30 SECONDS)
+
 
 /datum/reagent/inverse/bath_salts/on_mob_life(mob/living/carbon/affected_mob, seconds_per_tick, metabolization_ratio)
 	. = ..()
@@ -1013,9 +1015,13 @@ Basically, we fill the time between now and 2s from now with hands based off the
 
 		if(need_mob_update)
 			. = UPDATE_MOB_HEALTH
+		return
 
-	else if(SPT_PROB(10, seconds_per_tick))
+	if(SPT_PROB(10, seconds_per_tick))
 		affected_mob.emote(pick("screech","scratch","jump","look"))
+
+	QDEL_NULL(jungle_arts)
+	affected_mob.remove_traits(list(TRAIT_STUNIMMUNE, TRAIT_SLEEPIMMUNE, TRAIT_ANALGESIA, TRAIT_STIMULATED), type)
 
 /datum/reagent/inverse/aranesp
 	name = "Epoetin Alfa"

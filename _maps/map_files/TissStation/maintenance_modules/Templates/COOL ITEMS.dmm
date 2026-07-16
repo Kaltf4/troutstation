@@ -1,8 +1,4 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
-"a" = (
-/obj/item/clothing/suit/caution,
-/turf/open/space/basic,
-/area/space)
 "e" = (
 /obj/structure/votebox,
 /turf/open/space/basic,
@@ -18,12 +14,6 @@
 "p" = (
 /obj/item/clothing/head/mothcap/original,
 /obj/item/clothing/suit/mothcoat/original,
-/turf/open/space/basic,
-/area/space)
-"q" = (
-/obj/item/clothing/suit/armor/dragoon,
-/obj/item/clothing/head/helmet/dragoon,
-/obj/item/spear/skybulge,
 /turf/open/space/basic,
 /area/space)
 "s" = (
@@ -65,10 +55,6 @@
 "H" = (
 /turf/open/space/basic,
 /area/space)
-"J" = (
-/obj/structure/pinata,
-/turf/open/space/basic,
-/area/space)
 "K" = (
 /obj/vehicle/ridden/wheelchair/gold,
 /turf/open/space/basic,
@@ -87,10 +73,6 @@
 /obj/item/mod/module/sphere_transform,
 /obj/item/mod/module/springlock/bite_of_87,
 /obj/item/mod/module/waddle,
-/turf/open/space/basic,
-/area/space)
-"Q" = (
-/obj/structure/reagent_dispensers/beerkeg,
 /turf/open/space/basic,
 /area/space)
 "T" = (
@@ -147,7 +129,7 @@ H
 H
 H
 X
-Q
+H
 V
 "}
 (4,1,1) = {"
@@ -171,7 +153,7 @@ H
 H
 H
 H
-J
+H
 s
 "}
 (6,1,1) = {"
@@ -195,7 +177,7 @@ H
 H
 H
 H
-a
+H
 z
 "}
 (8,1,1) = {"
@@ -219,7 +201,7 @@ H
 H
 H
 H
-q
+H
 y
 "}
 (10,1,1) = {"
